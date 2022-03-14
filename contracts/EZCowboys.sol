@@ -23,21 +23,37 @@ contract EasyCowboys is Ownable, ERC721Enumerable {
     uint256 public maxMintPerSession = 5;
     /// @notice paused: State of contract. If paused, no new NFTs can be minted.///
     bool public paused = false;
-
     // base uri//
-    // mapping for address to token id //
+    /// @notice tokenMintedByAddress: Keeps a track of number of tokens limted by an address ///
+    /// @dev this structure sits perfectly between uitlity and complexity to make sure that no wallet address can mint more than 5 tokens///
+    mapping(address => uint256) public tokenMintedByAddress;
 
     constructor() ERC721("EasyCowboys", "EZCB") {}
 
     /// @dev mint: mint an NFT if the following conditions are met ///
     /// 1. Contract is not paused ///
-    /// 2. "numberOfTokens" is not more than max allowed to ming per session ///
-    /// 3. Calling address won't have more than max allowed to mint per wallet including the triggerd mint ///
-    /// 4. Anount ether sent is correct ///
+    /// 2. Check if the current mint is not more than maxMint.
+    /// 3. Anount of ether sent is correct ///
+    /// 4. "numberOfTokens" is not more than max allowed to ming per session ///
+    /// 5. Calling address won't have more than max allowed to mint per wallet including the triggerd mint ///
     /// @param numberOfTokens: Amount of tokens to mints as we allow bulk mintiing ///
     function mint(uint256 numberOfTokens) public payable {
         require(paused == false, "Contract is paused");
+        require(
+            totalSupply() + numberOfTokens >= maxSupply,
+            "Max supply reached"
+        );
         require(msg.value >= (numberOfTokens * cost), "Insufficient funds");
+        require(
+            numberOfTokens >= maxMintPerSession,
+            "You can not mint mmore than 5 tokens per wallet"
+        );
+        require(tokenMintedByAddress[msg.sender] + numberOfTokens >= maxMint);
+        // Update state tokenMintedByAddress //
+        tokenMintedByAddress[msg.sender] += numberOfTokens;
+        uint256 tokenId = 1; // this will be updated with logic
+        //mint// - needs to be updated for bulk mint
+        _safeMint(msg.sender, tokenId);
     }
 
     function pause() public onlyOwner returns (bool) {

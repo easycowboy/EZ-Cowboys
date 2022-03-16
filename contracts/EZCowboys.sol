@@ -36,24 +36,27 @@ contract EasyCowboys is Ownable, ERC721Enumerable {
     /// 3. Anount of ether sent is correct ///
     /// 4. "numberOfTokens" is not more than max allowed to ming per session ///
     /// 5. Calling address won't have more than max allowed to mint per wallet including the triggerd mint ///
-    /// @param numberOfTokens: Amount of tokens to mints as we allow bulk mintiing ///
-    function mint(uint256 numberOfTokens) public payable {
+    /// @param _numberOfTokens: Amount of tokens to mints as we allow bulk mintiing ///
+    function mint(uint256 _numberOfTokens) public payable {
+        // IDEA: make number of tokens 1 by default if nothing is provided //
         require(paused == false, "Contract is paused");
         require(
-            totalSupply() + numberOfTokens >= maxSupply,
+            totalSupply() + _numberOfTokens >= maxSupply,
             "Max supply reached"
         );
-        require(msg.value >= (numberOfTokens * cost), "Insufficient funds");
+        require((_numberOfTokens * cost) > msg.value, "Insufficient funds");
         require(
-            numberOfTokens >= maxMintPerSession,
+            _numberOfTokens > maxMintPerSession,
             "You can not mint mmore than 5 tokens per wallet"
         );
-        require(tokenMintedByAddress[msg.sender] + numberOfTokens >= maxMint);
+        require(tokenMintedByAddress[msg.sender] + _numberOfTokens >= maxMint);
         // Update state tokenMintedByAddress //
-        tokenMintedByAddress[msg.sender] += numberOfTokens;
-        uint256 tokenId = 1; // this will be updated with logic
-        //mint// - needs to be updated for bulk mint
-        _safeMint(msg.sender, tokenId);
+        tokenMintedByAddress[msg.sender] += _numberOfTokens;
+        for (uint256 i = 0; i < _numberOfTokens; i++) {
+            uint256 tokenId = 1; // this will be updated with logic
+            //mint// - needs to be updated for bulk mint
+            _safeMint(msg.sender, tokenId);
+        }
     }
 
     function pause() public onlyOwner returns (bool) {

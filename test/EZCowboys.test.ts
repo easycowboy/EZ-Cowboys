@@ -4,9 +4,9 @@
 // mint while paused - with general user//
 // mint while paused - with owner address//
 // try to mint after max supply is minted//
-// total supply //
+// total supply  - check state as it's only way to check crucial max supply verification//
 // transfer ownership //
-
+// tokenMintedByAddress state//
 import { ethers } from "hardhat";
 // const { expectRevert } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");

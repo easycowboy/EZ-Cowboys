@@ -4,7 +4,6 @@ pragma solidity 0.8.4;
 /// @title Easycowboys ///
 /// @author Pradhumna Pancholi ///
 
-// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -40,11 +39,9 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
     /// 4. "numberOfTokens" is not more than max allowed to ming per session ///
     /// 5. Calling address won't have more than max allowed to mint per wallet including the triggerd mint ///
     /// @param _numberOfTokens: Amount of tokens to mints as we allow bulk mintiing ///
-    function mint(uint256 _numberOfTokens) external payable {
-        // ToDo: make number of tokens 1 by default if nothing is provided - solution : create a new method without any arguent whihc will do the same thing except take 1 as number of tokens. //
+    function mint(uint256 _numberOfTokens) public payable {
         require(paused == false, "Contract is paused");
         require(MAX_SUPPLY > _tokenIds.current(), "Max supply reached");
-        require(msg.value >= (_numberOfTokens * COST), "Insufficient funds");
         require(
             MAX_MINT_PER_SESSION > _numberOfTokens,
             "You can not mint mmore than 5 tokens per session"
@@ -53,6 +50,8 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
             MAX_MINT >= (tokenMintedByAddress[msg.sender] + _numberOfTokens),
             "A wallet can not mint more than 5 tokens"
         );
+        //check if amount of ether sent is correct//
+        require(msg.value >= (_numberOfTokens * COST), "Insufficient funds");
         // Update state tokenMintedByAddress //
         tokenMintedByAddress[msg.sender] += _numberOfTokens;
         for (uint256 i = 0; i < _numberOfTokens; i++) {
@@ -63,10 +62,14 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
             string memory tURI = string(
                 abi.encodePacked(BASE_URI, "/", id, ".json")
             );
-            //mint token//
             _safeMint(msg.sender, tokenId);
             _setTokenURI(tokenId, tURI);
         }
+    }
+
+    /// @dev : this works as a wrapper to handle the call if function is calledd with an argument//
+    function mint() external payable {
+        mint(1);
     }
 
     function pause() external onlyOwner returns (bool) {

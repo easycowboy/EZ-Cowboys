@@ -41,11 +41,23 @@ describe("Easy Cowboys Contract", function () {
     );
     await expect(await contract.paused()).to.equal(false);
   });
-  it("Can't be minted while paused", async function () {
+  it("Can't be minted while paused - general user", async function () {
     await contract.connect(owner).pause();
     await expect(await contract.paused()).to.equal(true);
     await expect(contract.connect(addr1).mint(1)).to.be.revertedWith(
       "Contract is paused"
     );
+  });
+  it("Can't be minted while paused - owner", async function () {
+    await contract.connect(owner).pause();
+    await expect(await contract.paused()).to.equal(true);
+    await expect(contract.connect(owner).mint(1)).to.be.revertedWith(
+      "Contract is paused"
+    );
+  });
+  it("totalSupply returns amount of minted tokens", async function () {
+    await contract.connect(owner).resume(); // un-pause from previous test's effect//
+    await contract.connect(addr1).mint(5);
+    await expect(contract.totalSupply()).to.be.equal(5);
   });
 });

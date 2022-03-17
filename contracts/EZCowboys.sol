@@ -43,8 +43,7 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
     function mint(uint256 _numberOfTokens) external payable {
         // ToDo: make number of tokens 1 by default if nothing is provided - solution : create a new method without any arguent whihc will do the same thing except take 1 as number of tokens. //
         require(paused == false, "Contract is paused");
-        // ToDo : need to implemeant t a "totalSupply" tracker with the counter we reomved Enumerable extension is favour of URIStorage
-        require(_tokenIds.current() == MAX_SUPPLY, "Max supply reached");
+        require(MAX_SUPPLY > _tokenIds.current(), "Max supply reached");
         require(msg.value >= (_numberOfTokens * COST), "Insufficient funds");
         require(
             MAX_MINT_PER_SESSION > _numberOfTokens,

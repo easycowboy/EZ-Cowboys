@@ -44,10 +44,7 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
         // ToDo: make number of tokens 1 by default if nothing is provided - solution : create a new method without any arguent whihc will do the same thing except take 1 as number of tokens. //
         require(paused == false, "Contract is paused");
         // ToDo : need to implemeant t a "totalSupply" tracker with the counter we reomved Enumerable extension is favour of URIStorage
-        // require(
-        //     totalSupply() + _numberOfTokens >= maxSupply,
-        //     "Max supply reached"
-        // );
+        require(_tokenIds.current() == MAX_SUPPLY, "Max supply reached");
         require(msg.value >= (_numberOfTokens * COST), "Insufficient funds");
         require(
             MAX_MINT_PER_SESSION > _numberOfTokens,
@@ -64,7 +61,9 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
             uint256 tokenId = _tokenIds.current(); // get current state of counter for token id//
             //prepare tokenURI//
             string memory id = Strings.toString(_tokenIds.current());
-            string memory tURI = string(abi.encodePacked(BASE_URI, "/", id));
+            string memory tURI = string(
+                abi.encodePacked(BASE_URI, "/", id, ".json")
+            );
             //mint token//
             _safeMint(msg.sender, tokenId);
             _setTokenURI(tokenId, tURI);
@@ -79,5 +78,9 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
     function resume() external onlyOwner returns (bool) {
         paused = false;
         return paused;
+    }
+
+    function totalSupply() external view returns (uint256) {
+        return _tokenIds.current();
     }
 }

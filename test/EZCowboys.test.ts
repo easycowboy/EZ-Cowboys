@@ -1,7 +1,6 @@
 // mint//
 // mint more than maxMint = 5//
 // pause state //
-// starts with pause false//
 // mint while paused - with general user//
 // mint while paused - with owner address//
 // try to mint after max supply is minted//
@@ -9,7 +8,7 @@
 // transfer ownership //
 
 import { ethers } from "hardhat";
-const { expectRevert } = require("@openzeppelin/test-helpers");
+// const { expectRevert } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");
 
 describe("Easy Cowboys Contract", function () {
@@ -35,8 +34,18 @@ describe("Easy Cowboys Contract", function () {
     expect(await contract.paused()).to.equal(false);
   });
   it("General user can not pause the contract", async function () {
-    await contract.connect(addr1);
-    await expectRevert(contract.pause(), "Ownable: caller is not the owner");
-    expect(await contract.paused()).to.equal(false);
+    // await contract.connect(addr1);
+    // await expectRevert(contract.pause());
+    await expect(contract.connect(addr1).pause()).to.be.revertedWith(
+      "Ownable: caller is not the owner"
+    );
+    await expect(await contract.paused()).to.equal(false);
+  });
+  it("Can't be minted while paused", async function () {
+    await contract.connect(owner).pause();
+    await expect(await contract.paused()).to.equal(true);
+    await expect(contract.connect(addr1).mint(1)).to.be.revertedWith(
+      "Contract is paused"
+    );
   });
 });

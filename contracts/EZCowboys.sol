@@ -82,7 +82,11 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
         return paused;
     }
 
-    function totalSupply() external view returns (uint256) {
+    function totalSupply() public view returns (uint256) {
         return _tokenIds.current();
+    }
+
+    function withdrawFunds() external onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
     }
 }

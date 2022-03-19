@@ -1,23 +1,17 @@
-// mint//
-// mint more than maxMint = 5//
-// pause state //
-// mint while paused - with general user//
-// mint while paused - with owner address//
-// try to mint after max supply is minted//
-// total supply  - check state as it's only way to check crucial max supply verification//
-// transfer ownership //
-// tokenMintedByAddress state//
-import { ethers } from "hardhat";
+import { ethers, waffle } from "hardhat";
 import { Contract } from "ethers";
+
 const { expect } = require("chai");
 
 describe("Easy Cowboys Contract", function () {
   let owner: any;
   let contract: Contract;
   let addr1: any;
+  let addr2: any;
+  const provider = waffle.provider;
 
   beforeEach(async function () {
-    [owner, addr1] = await ethers.getSigners();
+    [owner, addr1, addr2] = await ethers.getSigners();
     const EasyCowboys = await ethers.getContractFactory("EasyCowboys");
     contract = await EasyCowboys.deploy();
   });
@@ -53,9 +47,8 @@ describe("Easy Cowboys Contract", function () {
     });
     it("User can not mint when contract is paused", async function () {
       await contract.connect(owner).pause();
-      await contract.connect(addr1);
       await expect(
-        contract["mint()"]({
+        contract.connect(addr1)["mint()"]({
           value: ethers.utils.parseEther("0.069"),
         })
       ).to.be.revertedWith("Contract is paused");
@@ -76,7 +69,7 @@ describe("Easy Cowboys Contract", function () {
       expect(await contract.paused()).to.equal(true);
     });
     it("Owner can resume the contract", async function () {
-      await contract.resume();
+      await contract.connect(owner).resume();
       expect(await contract.paused()).to.equal(false);
     });
   });
@@ -92,34 +85,108 @@ describe("Easy Cowboys Contract", function () {
 
       expect(await contract.totalSupply()).to.equal(1);
     });
+    it("Bulk mints", async function () {
+      await contract.connect(addr1);
+      await expect(
+        contract["mint(uint256)"](3, {
+          value: ethers.utils.parseEther((0.069 * 3).toString()),
+        })
+      ).to.emit(contract, "Transfer");
+    });
+    it("User can not mint more than 5 token per session", async function () {
+      await contract.connect(addr1);
+      await expect(
+        contract["mint(uint256)"](6, {
+          value: ethers.utils.parseEther((0.069 * 6).toString()),
+        })
+      ).to.be.revertedWith("You can not mint more than 5 tokens per session");
+    });
+    it("User can not mint more than 5 tokens per wallet", async function () {
+      await contract.connect(addr1);
+      // mint 1 token first//
+      await expect(
+        contract["mint()"]({ value: ethers.utils.parseEther("0.069") })
+      ).to.emit(contract, "Transfer");
+      // now, we try to mint 5 more//
+      await expect(
+        contract["mint(uint256)"](5, {
+          value: ethers.utils.parseEther((0.069 * 6).toString()),
+        })
+      ).to.be.revertedWith("A wallet can not mint more than 5 tokens");
+    });
+    it("Transaction is reverted if insufficient funds are provided", async function () {
+      await contract.connect(addr1);
+      await expect(
+        contract["mint()"]({ value: ethers.utils.parseEther("0.068999") })
+      ).to.be.reverted;
+    });
+    it("Total supply is updated after mint", async function () {
+      const totalSupply = await contract.totalSupply();
+      await contract.connect(addr1);
+      await expect(
+        contract["mint()"]({ value: ethers.utils.parseEther("0.069") })
+      ).to.emit(contract, "Transfer");
+      expect(await contract.totalSupply()).to.equal(totalSupply + 1);
+    });
   });
-  it("User can not mint more than 5 token per session", async function () {
-    await contract.connect(addr1);
-    await expect(
-      contract["mint(uint256)"](6, {
-        value: ethers.utils.parseEther((0.069 * 6).toString()),
-      })
-    ).to.be.revertedWith("You can not mint more than 5 tokens per session");
+  describe("Withdrawals", function () {
+    it("User can not withdraw funds", async function () {
+      await expect(contract.connect(addr1).withdrawFunds()).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      );
+    });
+    it("No withdrawal if no funds are available", async function () {
+      await expect(contract.connect(owner).withdrawFunds()).to.be.revertedWith(
+        "No ether left to withdraw"
+      );
+    });
+    it("Owner can withdraw funds", async function () {
+      await expect(
+        contract.connect(addr1)["mint(uint256)"](5, {
+          value: ethers.utils.parseEther((5 * 0.069).toString()),
+        })
+      ).to.emit(contract, "Transfer");
+
+      const contractBalance = ethers.utils.formatEther(
+        (await provider.getBalance(contract.address)).toString()
+      );
+
+      const ownerBalance = ethers.utils.formatEther(
+        (await provider.getBalance(owner.address)).toString()
+      );
+
+      let tx: any;
+      await expect(
+        (tx = await contract.connect(owner).withdrawFunds())
+      ).to.emit(contract, "Withdraw");
+
+      const receipt = await tx.wait();
+      const gasSpent = ethers.utils.formatEther(
+        receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice)
+      );
+      expect(
+        Number(
+          ethers.utils.formatEther(await provider.getBalance(owner.address))
+        )
+      ).to.equal(
+        Number(ownerBalance) + Number(contractBalance) - Number(gasSpent)
+      );
+    });
   });
-  it("User can not mint more than 5 tokens per wallet", async function () {
-    await contract.connect(addr1);
-    // mint 1 token first//
-    await expect(
-      contract["mint()"]({ value: ethers.utils.parseEther("0.069") })
-    ).to.emit(contract, "Transfer");
-    // now, we try to mint 5 more//
-    await expect(
-      contract["mint(uint256)"](5, {
-        value: ethers.utils.parseEther((0.069 * 6).toString()),
-      })
-    ).to.be.revertedWith("A wallet can not mint more than 5 tokens");
+  describe("Transfer Ownership", function () {
+    it("User can not transfer ownership", async function () {
+      await expect(
+        contract.connect(addr1).transferOwnership(addr2.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+    it("Owner can transfer ownership", async function () {
+      await contract.connect(owner).transferOwnership(addr2.address);
+
+      // now that addr2 is owner, it should be able to pause the contract//
+      await contract.connect(addr2).pause();
+      expect(await contract.paused()).to.be.equal(true);
+    });
   });
-  // can't mint more than 5 per session//
-  // insufficient funds//
-  // a wallet can not mint more than 5//
-  // balanceOf is updated//
-  // totalSupply is updated//
-  // tokenId is updated// - maybe
   // -------------------------------//
   // owner can mint 100 per session //
   // owner doesn't have to pay//

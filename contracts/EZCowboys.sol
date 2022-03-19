@@ -32,6 +32,8 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
 
     constructor() ERC721("EasyCowboys", "EZCB") {}
 
+    event Withdraw(address _to, uint256 _value);
+
     /// @dev : this works as a wrapper to handle the call if function is calledd with an argument//
     function mint() external payable {
         mint(1);
@@ -87,6 +89,10 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
     }
 
     function withdrawFunds() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ether left to withdraw");
+        (bool success, ) = (msg.sender).call{value: balance}("");
+        require(success, "Withdrawal Failed");
+        emit Withdraw(msg.sender, balance);
     }
 }

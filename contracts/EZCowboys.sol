@@ -19,6 +19,8 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
     uint256 public constant MAX_SUPPLY = 10000;
     /// @notice maxMint: Amount of NFTs a single wallet can mint//
     uint256 public constant MAX_MINT = 5;
+    /// @notice max mint batch: Maximum tokens that owner can mint in a batch//
+    uint256 public constant MAX_MINT_BATCH = 100;
     /// @notice maxMintPerSession:  Amount of NFT's that can be minted per session as this contract allows bulk minting ///
     uint256 public constant MAX_MINT_PER_SESSION = 5;
     /// @notice paused: State of contract. If paused, no new NFTs can be minted.///
@@ -94,5 +96,28 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
         (bool success, ) = (msg.sender).call{value: balance}("");
         require(success, "Withdrawal Failed");
         emit Withdraw(msg.sender, balance);
+    }
+
+    // this function is meant to be used by owner to mint a batch of tokens for airdrops, team-members, etc. This method allow owner to mint the token without paying the cost as well///
+    function mintBatch(uint256 _numberOfTokens) external onlyOwner {
+        require(paused == false, "Contract is paused");
+        require(MAX_SUPPLY > _tokenIds.current(), "Max supply reached");
+        require(
+            MAX_MINT_BATCH >= _numberOfTokens,
+            "You can only mint 100 tokens in one batch"
+        );
+        // Update state tokenMintedByAddress //
+        tokenMintedByAddress[msg.sender] += _numberOfTokens;
+        for (uint256 i = 0; i < _numberOfTokens; i++) {
+            _tokenIds.increment(); // increment counter state
+            uint256 tokenId = _tokenIds.current(); // get current state of counter for token id//
+            //prepare tokenURI//
+            string memory id = Strings.toString(_tokenIds.current());
+            string memory tURI = string(
+                abi.encodePacked(BASE_URI, "/", id, ".json")
+            );
+            _safeMint(msg.sender, tokenId);
+            _setTokenURI(tokenId, tURI);
+        }
     }
 }

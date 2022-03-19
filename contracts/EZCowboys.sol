@@ -32,6 +32,11 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
 
     constructor() ERC721("EasyCowboys", "EZCB") {}
 
+    /// @dev : this works as a wrapper to handle the call if function is calledd with an argument//
+    function mint() external payable {
+        mint(1);
+    }
+
     /// @dev mint: mint an NFT if the following conditions are met ///
     /// 1. Contract is not paused ///
     /// 2. Check if the current mint is not more than maxMint.
@@ -43,8 +48,8 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
         require(paused == false, "Contract is paused");
         require(MAX_SUPPLY > _tokenIds.current(), "Max supply reached");
         require(
-            MAX_MINT_PER_SESSION > _numberOfTokens,
-            "You can not mint mmore than 5 tokens per session"
+            MAX_MINT_PER_SESSION >= _numberOfTokens,
+            "You can not mint more than 5 tokens per session"
         );
         require(
             MAX_MINT >= (tokenMintedByAddress[msg.sender] + _numberOfTokens),
@@ -65,11 +70,6 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
             _safeMint(msg.sender, tokenId);
             _setTokenURI(tokenId, tURI);
         }
-    }
-
-    /// @dev : this works as a wrapper to handle the call if function is calledd with an argument//
-    function mint() external payable {
-        mint(1);
     }
 
     function pause() external onlyOwner returns (bool) {

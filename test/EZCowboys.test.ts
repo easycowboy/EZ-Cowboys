@@ -8,14 +8,15 @@
 // transfer ownership //
 // tokenMintedByAddress state//
 import { ethers } from "hardhat";
+import { Contract } from "ethers";
 const { expect } = require("chai");
 
 describe("Easy Cowboys Contract", function () {
   let owner: any;
-  let contract: any;
+  let contract: Contract;
   let addr1: any;
 
-  before(async function () {
+  beforeEach(async function () {
     [owner, addr1] = await ethers.getSigners();
     const EasyCowboys = await ethers.getContractFactory("EasyCowboys");
     contract = await EasyCowboys.deploy();
@@ -38,9 +39,7 @@ describe("Easy Cowboys Contract", function () {
       expect(Number(ethers.utils.formatEther(cost))).to.equal(0.069);
     });
   });
-  // Pause - ORDER MATTERS //
-  // Reason: we are running test with 'before' and not "beforeEach". This allows to perform test sequentially which helps with composability//
-  // With that solution, order matters to avoid cleaning up every action after test//
+  // Pause   //
   describe("Pause", function () {
     it("User can not pause the contract", async function () {
       await expect(contract.connect(addr1).pause()).to.be.revertedWith(
@@ -49,22 +48,28 @@ describe("Easy Cowboys Contract", function () {
       expect(await contract.paused()).to.equal(false);
     });
     it("Owner can pause the contract", async function () {
-      await contract.pause();
+      await contract.connect(owner).pause();
       expect(await contract.paused()).to.equal(true);
     });
     it("User can not mint when contract is paused", async function () {
+      await contract.connect(owner).pause();
       await contract.connect(addr1);
-      await expect(contract["mint(uint256)"](1)).to.be.revertedWith(
-        "Contract is paused"
-      );
+      await expect(
+        contract["mint()"]({
+          value: ethers.utils.parseEther("0.069"),
+        })
+      ).to.be.revertedWith("Contract is paused");
+      expect(await contract.paused()).to.equal(true);
     });
     it("Owner can not mint when the contract is paused", async function () {
-      await contract.connect(owner);
+      await contract.connect(owner).pause();
       await expect(contract["mint(uint256)"](1)).to.be.revertedWith(
         "Contract is paused"
       );
+      expect(await contract.paused()).to.equal(true);
     });
     it("User can not resume the contract", async function () {
+      await contract.connect(owner).pause();
       await expect(contract.connect(addr1).resume()).to.be.revertedWith(
         "Ownable: caller is not the owner"
       );
@@ -75,36 +80,47 @@ describe("Easy Cowboys Contract", function () {
       expect(await contract.paused()).to.equal(false);
     });
   });
-  // //   owner can unpause//
-  // it("Owner can unpause the contract", async function () {
-  //   await contract.resume();
-  //   expect(await contract.paused()).to.equal(false);
-  // });
-  // it("General user can not pause the contract", async function () {
-  //   // await contract.connect(addr1);
-  //   // await expectRevert(contract.pause());
-  //   await expect(contract.connect(addr1).pause()).to.be.revertedWith(
-  //     "Ownable: caller is not the owner"
-  //   );
-  //   await expect(await contract.paused()).to.equal(false);
-  // });
-  // it("Can't be minted while paused - general user", async function () {
-  //   await contract.connect(owner).pause();
-  //   await expect(await contract.paused()).to.equal(true);
-  //   await expect(contract.connect(addr1).mint(1)).to.be.revertedWith(
-  //     "Contract is paused"
-  //   );
-  // });
-  // it("Can't be minted while paused - owner", async function () {
-  //   await contract.connect(owner).pause();
-  //   await expect(await contract.paused()).to.equal(true);
-  //   await expect(contract.connect(owner).mint(1)).to.be.revertedWith(
-  //     "Contract is paused"
-  //   );
-  // });
-  // it("totalSupply returns amount of minted tokens", async function () {
-  //   await contract.connect(owner).resume(); // un-pause from previous test's effect//
-  //   await contract.connect(addr1).mint(5);
-  //   await expect(contract.totalSupply()).to.be.equal(5);
-  // });
+  // Mint//
+  describe("Minting", function () {
+    it("Mints 1 when no argument is passed", async function () {
+      await contract.connect(addr1);
+      await expect(
+        contract["mint()"]({
+          value: ethers.utils.parseEther("0.069"),
+        })
+      ).to.emit(contract, "Transfer");
+
+      expect(await contract.totalSupply()).to.equal(1);
+    });
+  });
+  it("User can not mint more than 5 token per session", async function () {
+    await contract.connect(addr1);
+    await expect(
+      contract["mint(uint256)"](6, {
+        value: ethers.utils.parseEther((0.069 * 6).toString()),
+      })
+    ).to.be.revertedWith("You can not mint more than 5 tokens per session");
+  });
+  it("User can not mint more than 5 tokens per wallet", async function () {
+    await contract.connect(addr1);
+    // mint 1 token first//
+    await expect(
+      contract["mint()"]({ value: ethers.utils.parseEther("0.069") })
+    ).to.emit(contract, "Transfer");
+    // now, we try to mint 5 more//
+    await expect(
+      contract["mint(uint256)"](5, {
+        value: ethers.utils.parseEther((0.069 * 6).toString()),
+      })
+    ).to.be.revertedWith("A wallet can not mint more than 5 tokens");
+  });
+  // can't mint more than 5 per session//
+  // insufficient funds//
+  // a wallet can not mint more than 5//
+  // balanceOf is updated//
+  // totalSupply is updated//
+  // tokenId is updated// - maybe
+  // -------------------------------//
+  // owner can mint 100 per session //
+  // owner doesn't have to pay//
 });

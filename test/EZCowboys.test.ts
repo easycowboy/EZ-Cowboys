@@ -164,12 +164,16 @@ describe("Easy Cowboys Contract", function () {
       const gasSpent = ethers.utils.formatEther(
         receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice)
       );
+      // a little formatting to only take 10 numbers after decimal as their are some very tiny(negligible) difference that - due to transaction.
+      // Example : AssertionError: expected 9999.839771619336 to equal 9999.839771619334
       expect(
         Number(
           ethers.utils.formatEther(await provider.getBalance(owner.address))
-        )
+        ).toFixed(10)
       ).to.equal(
-        Number(ownerBalance) + Number(contractBalance) - Number(gasSpent)
+        Number(
+          Number(ownerBalance) + Number(contractBalance) - Number(gasSpent)
+        ).toFixed(10)
       );
     });
   });

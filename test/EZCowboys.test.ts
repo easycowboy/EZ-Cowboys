@@ -164,12 +164,16 @@ describe("Easy Cowboys Contract", function () {
       const gasSpent = ethers.utils.formatEther(
         receipt.cumulativeGasUsed.mul(receipt.effectiveGasPrice)
       );
+      // a little formatting to only take 10 numbers after decimal as their are some very tiny(negligible) difference that - due to transaction.
+      // Example : AssertionError: expected 9999.839771619336 to equal 9999.839771619334
       expect(
         Number(
           ethers.utils.formatEther(await provider.getBalance(owner.address))
-        )
+        ).toFixed(10)
       ).to.equal(
-        Number(ownerBalance) + Number(contractBalance) - Number(gasSpent)
+        Number(
+          Number(ownerBalance) + Number(contractBalance) - Number(gasSpent)
+        ).toFixed(10)
       );
     });
   });
@@ -187,7 +191,23 @@ describe("Easy Cowboys Contract", function () {
       expect(await contract.paused()).to.be.equal(true);
     });
   });
-  // -------------------------------//
-  // owner can mint 100 per session //
-  // owner doesn't have to pay//
+  describe("Batch mint", function () {
+    it("User can not batch mint", async function () {
+      await expect(contract.connect(addr1).mintBatch(100)).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      );
+    });
+    it("Owner can mint a batch", async function () {
+      await expect(contract.connect(owner).mintBatch(100)).to.emit(
+        contract,
+        "Transfer"
+      );
+      expect(await contract.totalSupply()).to.equal(100);
+    });
+    it("Owner can not mint more than 100 tokens in a batch", async function () {
+      await expect(contract.connect(owner).mintBatch(101)).to.revertedWith(
+        "You can only mint 100 tokens in one batch"
+      );
+    });
+  });
 });

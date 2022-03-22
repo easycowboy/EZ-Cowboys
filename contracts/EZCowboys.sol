@@ -35,7 +35,7 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
     bool public paused = false;
     // base uri//
     string constant BASE_URI =
-        "ipfs://QmRSp82zg7WhEnSd5xZbWjX5vXDCyNgGe6dtuLmDHM7UfG";
+        "ipfs://QmRSp82zg7WhEnSd5xZbWjX5vXDCyNgGe6dtuLmDHM7UfG;
     /// @notice tokenMintedByAddress: Keeps a track of number of tokens limted by an address ///
     /// @dev this structure sits perfectly between uitlity and complexity to make sure that no wallet address can mint more than 5 tokens///
     mapping(address => uint256) public tokenMintedByAddress;
@@ -122,7 +122,7 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
             //prepare tokenURI//
             string memory id = Strings.toString(_tokenIds.current());
             string memory tURI = string(
-                abi.encodePacked(BASE_URI, "/", id, ".json")
+                abi.encodePacked(BASE_URI, "/", id)
             );
             _safeMint(msg.sender, tokenId);
             _setTokenURI(tokenId, tURI);

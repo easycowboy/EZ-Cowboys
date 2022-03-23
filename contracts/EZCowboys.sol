@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0//
 pragma solidity 0.8.4;
 
-/// @title Easycowboys ///
+/// @title Easycowboy ///
 /// @author Pradhumna Pancholi ///
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";

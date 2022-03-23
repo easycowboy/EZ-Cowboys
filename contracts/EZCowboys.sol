@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 // ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝        ╚═════╝ ╚═════╝  ╚══╝╚══╝ ╚═════╝  ╚═════╝    ╚═╝
 //
 
-contract EasyCowboys is Ownable, ERC721URIStorage {
+contract EasyCowboy is Ownable, ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -40,7 +40,7 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
     /// @dev this structure sits perfectly between uitlity and complexity to make sure that no wallet address can mint more than 5 tokens///
     mapping(address => uint256) public tokenMintedByAddress;
 
-    constructor() ERC721("EasyCowboys", "EZCB") {}
+    constructor() ERC721("EasyCowboy", "EZCB") {}
 
     event Withdraw(address _to, uint256 _value);
 

@@ -12,8 +12,8 @@ describe("Easy Cowboys Contract", function () {
 
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
-    const EasyCowboys = await ethers.getContractFactory("EasyCowboys");
-    contract = await EasyCowboys.deploy();
+    const EasyCowboy = await ethers.getContractFactory("EasyCowboy");
+    contract = await EasyCowboy.deploy();
   });
   // Deployment//
   describe("Deployment", function () {

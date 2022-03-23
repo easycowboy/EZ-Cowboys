@@ -9,6 +9,14 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
+// ███████╗ █████╗ ███████╗██╗   ██╗     ██████╗ ██████╗ ██╗    ██╗██████╗  ██████╗ ██╗   ██╗
+// ██╔════╝██╔══██╗██╔════╝╚██╗ ██╔╝    ██╔════╝██╔═══██╗██║    ██║██╔══██╗██╔═══██╗╚██╗ ██╔╝
+// █████╗  ███████║███████╗ ╚████╔╝     ██║     ██║   ██║██║ █╗ ██║██████╔╝██║   ██║ ╚████╔╝
+// ██╔══╝  ██╔══██║╚════██║  ╚██╔╝      ██║     ██║   ██║██║███╗██║██╔══██╗██║   ██║  ╚██╔╝
+// ███████╗██║  ██║███████║   ██║       ╚██████╗╚██████╔╝╚███╔███╔╝██████╔╝╚██████╔╝   ██║
+// ╚══════╝╚═╝  ╚═╝╚══════╝   ╚═╝        ╚═════╝ ╚═════╝  ╚══╝╚══╝ ╚═════╝  ╚═════╝    ╚═╝
+//
+
 contract EasyCowboys is Ownable, ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
@@ -27,7 +35,7 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
     bool public paused = false;
     // base uri//
     string constant BASE_URI =
-        "ipfs://QmS5JQA5skLeHsxxxA5H1oid56JFRiEeJ7V2YsncGjMiNQ";
+        "ipfs://QmRSp82zg7WhEnSd5xZbWjX5vXDCyNgGe6dtuLmDHM7UfG";
     /// @notice tokenMintedByAddress: Keeps a track of number of tokens limted by an address ///
     /// @dev this structure sits perfectly between uitlity and complexity to make sure that no wallet address can mint more than 5 tokens///
     mapping(address => uint256) public tokenMintedByAddress;
@@ -68,9 +76,7 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
             uint256 tokenId = _tokenIds.current(); // get current state of counter for token id//
             //prepare tokenURI//
             string memory id = Strings.toString(_tokenIds.current());
-            string memory tURI = string(
-                abi.encodePacked(BASE_URI, "/", id, ".json")
-            );
+            string memory tURI = string(abi.encodePacked(BASE_URI, "/", id));
             _safeMint(msg.sender, tokenId);
             _setTokenURI(tokenId, tURI);
         }
@@ -113,9 +119,7 @@ contract EasyCowboys is Ownable, ERC721URIStorage {
             uint256 tokenId = _tokenIds.current(); // get current state of counter for token id//
             //prepare tokenURI//
             string memory id = Strings.toString(_tokenIds.current());
-            string memory tURI = string(
-                abi.encodePacked(BASE_URI, "/", id, ".json")
-            );
+            string memory tURI = string(abi.encodePacked(BASE_URI, "/", id));
             _safeMint(msg.sender, tokenId);
             _setTokenURI(tokenId, tURI);
         }

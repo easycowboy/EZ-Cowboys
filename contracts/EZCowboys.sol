@@ -35,7 +35,7 @@ contract EasyCowboy is Ownable, ERC721URIStorage {
     bool public paused = false;
     // base uri//
     string constant BASE_URI =
-        "ipfs://QmRSp82zg7WhEnSd5xZbWjX5vXDCyNgGe6dtuLmDHM7UfG";
+        "ipfs://QmegyqSd9aKXdFotozc9KRzmmVfHquXYW5fJ6h4Z6m9Uat";
     /// @notice tokenMintedByAddress: Keeps a track of number of tokens limted by an address ///
     /// @dev this structure sits perfectly between uitlity and complexity to make sure that no wallet address can mint more than 5 tokens///
     mapping(address => uint256) public tokenMintedByAddress;
